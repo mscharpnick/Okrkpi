@@ -9,7 +9,7 @@ datasource db {
 
 model FiscalYear {
   id          String      @id @default(cuid())
-  startYear   Int         @unique  // e.g., 2025 for FY2025–2026 (July 1, 2025 – June 30, 2026)
+  startYear   Int
   workstreams Workstream[]
   kpis        KPI[]
   createdAt   DateTime    @default(now())
@@ -22,7 +22,7 @@ model Workstream {
   fiscalYear   FiscalYear  @relation(fields: [fiscalYearId], references: [id], onDelete: Cascade)
   fiscalYearId String
   stages       Stage[]
-  kpis         KPI[]       // back-relation for KPI.workstream
+  kpis         KPI[]
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 }
