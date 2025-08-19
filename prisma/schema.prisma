@@ -8,76 +8,55 @@ datasource db {
 }
 
 model FiscalYear {
-  id         String   @id @default(cuid())
-  startYear  Int      // e.g., 2025 for FY2025-2026 (July 1, 2025 – June 30, 2026)
+  id          String      @id @default(cuid())
+  startYear   Int         // e.g., 2025 for FY2025–2026 (July 1, 2025 – June 30, 2026)
   workstreams Workstream[]
-  kpis       KPI[]
-  createdAt  DateTime @default(now())
+  kpis        KPI[]
+  createdAt   DateTime    @default(now())
 }
 
 model Workstream {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  fiscalYear  FiscalYear @relation(fields: [fiscalYearId], references: [id], onDelete: Cascade)
+  id           String      @id @default(cuid())
+  name         String
+  description  String?
+  fiscalYear   FiscalYear  @relation(fields: [fiscalYearId], references: [id], onDelete: Cascade)
   fiscalYearId String
-  stages      Stage[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  stages       Stage[]
+  kpis         KPI[]       // back-relation for KPI.workstream
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 }
 
 model Stage {
-  id           String   @id @default(cuid())
+  id           String      @id @default(cuid())
   name         String
   startDate    DateTime
   endDate      DateTime
-  status       RagStatus @default(GREEN)
-  workstream   Workstream @relation(fields: [workstreamId], references: [id], onDelete: Cascade)
+  status       RagStatus   @default(GREEN)
+  workstream   Workstream  @relation(fields: [workstreamId], references: [id], onDelete: Cascade)
   workstreamId String
   objectives   Objective[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 }
 
 model Objective {
-  id        String   @id @default(cuid())
+  id        String     @id @default(cuid())
   title     String
   owner     String?
   startDate DateTime?
   dueDate   DateTime?
-  status    RagStatus @default(GREEN)
-  stage     Stage    @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  status    RagStatus  @default(GREEN)
+  stage     Stage      @relation(fields: [stageId], references: [id], onDelete: Cascade)
   stageId   String
   krs       KeyResult[]
   notes     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 }
 
 model KeyResult {
-  id          String   @id @default(cuid())
-  title       String
-  owner       String?
-  // Progress types: PERCENT, NUMERIC, HML (High/Medium/Low)
-  type        KrType
-  // Percent (0-100) if type == PERCENT
-  percent     Int?
-  // Numeric target/current if type == NUMERIC
-  target      Float?
-  current     Float?
-  unit        String? // e.g., "%", "hours", "#"
-  // H/M/L if type == HML
-  hml         Hml?
-  dueDate     DateTime?
-  status      RagStatus @default(GREEN)
-  objective   Objective @relation(fields: [objectiveId], references: [id], onDelete: Cascade)
-  objectiveId String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model KPI {
-  id          String   @id @default(cuid())
+  id          String     @id @default(cuid())
   title       String
   owner       String?
   type        KrType
@@ -86,13 +65,31 @@ model KPI {
   current     Float?
   unit        String?
   hml         Hml?
-  status      RagStatus @default(GREEN)
-  fiscalYear  FiscalYear @relation(fields: [fiscalYearId], references: [id], onDelete: Cascade)
+  dueDate     DateTime?
+  status      RagStatus  @default(GREEN)
+  objective   Objective  @relation(fields: [objectiveId], references: [id], onDelete: Cascade)
+  objectiveId String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model KPI {
+  id           String      @id @default(cuid())
+  title        String
+  owner        String?
+  type         KrType
+  percent      Int?
+  target       Float?
+  current      Float?
+  unit         String?
+  hml          Hml?
+  status       RagStatus   @default(GREEN)
+  fiscalYear   FiscalYear  @relation(fields: [fiscalYearId], references: [id], onDelete: Cascade)
   fiscalYearId String
-  workstream  Workstream? @relation(fields: [workstreamId], references: [id])
+  workstream   Workstream? @relation(fields: [workstreamId], references: [id])
   workstreamId String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 }
 
 enum RagStatus {
@@ -111,16 +108,4 @@ enum Hml {
   HIGH
   MEDIUM
   LOW
-}
-
-model Workstream {
-  id           String    @id @default(cuid())
-  name         String
-  description  String?
-  fiscalYear   FiscalYear @relation(fields: [fiscalYearId], references: [id], onDelete: Cascade)
-  fiscalYearId String
-  stages       Stage[]
-  kpis         KPI[]        // <-- ADD THIS LINE
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
 }
