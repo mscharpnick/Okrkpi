@@ -112,3 +112,15 @@ enum Hml {
   MEDIUM
   LOW
 }
+
+model Workstream {
+  id           String    @id @default(cuid())
+  name         String
+  description  String?
+  fiscalYear   FiscalYear @relation(fields: [fiscalYearId], references: [id], onDelete: Cascade)
+  fiscalYearId String
+  stages       Stage[]
+  kpis         KPI[]        // <-- ADD THIS LINE
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
