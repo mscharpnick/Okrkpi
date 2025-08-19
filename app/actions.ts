@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 export async function createFiscalYear(startYear: number) {
+  // startYear is @unique in the schema, so upsert is safe
   const fy = await prisma.fiscalYear.upsert({
     where: { startYear },
     update: {},
