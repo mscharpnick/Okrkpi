@@ -9,7 +9,7 @@ datasource db {
 
 model FiscalYear {
   id          String      @id @default(cuid())
-  startYear   Int         // e.g., 2025 for FY2025–2026 (July 1, 2025 – June 30, 2026)
+  startYear   Int         @unique  // e.g., 2025 for FY2025–2026 (July 1, 2025 – June 30, 2026)
   workstreams Workstream[]
   kpis        KPI[]
   createdAt   DateTime    @default(now())
