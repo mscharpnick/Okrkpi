@@ -2,22 +2,19 @@ import { prisma } from "@/lib/db";
 import TimelineGrid from "@/components/Timeline";
 import WorkstreamRow from "@/components/WorkstreamRow";
 import { currentFY } from "@/lib/fy";
-import { createFiscalYear, createStage, createWorkstream, createObjective, createKR } from "./actions";
-import { formatISO } from "date-fns";
+import { createStage, createWorkstream, createObjective, createKR } from "./actions";
 
 export const dynamic = 'force-dynamic';
 
 export default async function Page() {
   const fyParam = process.env.FY_START_YEAR ? Number(process.env.FY_START_YEAR) : currentFY().startYear;
-  const fy = await prisma.fiscalYear.findFirst({ where: { startYear: fyParam } });
-  let fyId = fy?.id;
-  if (!fyId) {
-    const f = await prisma.fiscalYear.create({ data: { startYear: fyParam } });
-    fyId = f.id;
-  }
+
+  // Ensure FY row exists
+  let fy = await prisma.fiscalYear.findFirst({ where: { startYear: fyParam } });
+  if (!fy) fy = await prisma.fiscalYear.create({ data: { startYear: fyParam } });
 
   const workstreams = await prisma.workstream.findMany({
-    where: { fiscalYearId: fyId },
+    where: { fiscalYearId: fy.id },
     include: {
       stages: {
         orderBy: { startDate: 'asc' },
@@ -29,24 +26,33 @@ export default async function Page() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold">Timeline — FY{fyParam}-{fyParam+1} (weeks start Sun)</h1>
+      <h1 className="text-xl font-semibold">Timeline — FY{fyParam}-{fyParam + 1} (weeks start Sun)</h1>
+
       <div className="rounded-xl border bg-white overflow-hidden">
         <TimelineGrid startYear={fyParam} />
         <div className="divide-y">
           {workstreams.map(ws => (
-            <WorkstreamRow key={ws.id} workstream={ws} stages={ws.stages as any} startYear={fyParam} />
+            <WorkstreamRow
+              key={ws.id}
+              workstream={ws}
+              stages={ws.stages as any}
+              startYear={fyParam}
+            />
           ))}
           {workstreams.length === 0 && (
-            <div className="p-4 text-sm text-gray-500">No workstreams yet. Use the forms below to add some.</div>
+            <div className="p-4 text-sm text-gray-500">
+              No workstreams yet. Use the forms below to add some.
+            </div>
           )}
         </div>
       </div>
 
+      {/* Forms */}
       <div className="grid md:grid-cols-2 gap-6">
         <section className="rounded-xl border bg-white p-4">
           <h2 className="font-medium mb-2">Add Workstream</h2>
           <form action={createWorkstream} className="grid gap-2">
-            <input type="hidden" name="fiscalYearId" value={fyId} />
+            <input type="hidden" name="fiscalYearId" value={fy.id} />
             <input name="name" placeholder="Workstream name" className="border rounded-md px-3 py-2" required />
             <button className="px-3 py-2 rounded-md border bg-gray-50 w-fit">Add</button>
           </form>
@@ -73,7 +79,11 @@ export default async function Page() {
           <form action={createObjective} className="grid gap-2">
             <select name="stageId" required className="border rounded-md px-3 py-2">
               <option value="">Select stage…</option>
-              {workstreams.flatMap(ws => ws.stages).map(s => <option key={s.id} value={s.id}>{s.name} — {workstreams.find(w=>w.id===s.workstreamId)?.name}</option>)}
+              {workstreams.flatMap(ws => ws.stages).map(s =>
+                <option key={s.id} value={s.id}>
+                  {s.name} — {workstreams.find(w => w.id === s.workstreamId)?.name}
+                </option>
+              )}
             </select>
             <input name="title" placeholder="Objective title" className="border rounded-md px-3 py-2" required />
             <input name="owner" placeholder="Owner" className="border rounded-md px-3 py-2" />
@@ -88,7 +98,9 @@ export default async function Page() {
           <form action={createKR} className="grid gap-2">
             <select name="objectiveId" required className="border rounded-md px-3 py-2">
               <option value="">Select objective…</option>
-              {workstreams.flatMap(ws => ws.stages).flatMap(s => s.objectives).map(o => <option key={o.id} value={o.id}>{o.title}</option>)}
+              {workstreams.flatMap(ws => ws.stages).flatMap(s => s.objectives).map(o =>
+                <option key={o.id} value={o.id}>{o.title}</option>
+              )}
             </select>
             <input name="title" placeholder="KR title" className="border rounded-md px-3 py-2" required />
             <select name="type" className="border rounded-md px-3 py-2">
