@@ -4,14 +4,12 @@ import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
+// No unique index on startYear → use findFirst + create (not upsert)
 export async function createFiscalYear(startYear: number) {
-  // startYear is @unique in the schema, so upsert is safe
-  const fy = await prisma.fiscalYear.upsert({
-    where: { startYear },
-    update: {},
-    create: { startYear },
-  });
-  return fy.id;
+  const existing = await prisma.fiscalYear.findFirst({ where: { startYear } });
+  if (existing) return existing.id;
+  const created = await prisma.fiscalYear.create({ data: { startYear } });
+  return created.id;
 }
 
 export async function createWorkstream(formData: FormData) {
@@ -111,6 +109,7 @@ export async function createKR(formData: FormData) {
   revalidatePath('/');
 }
 
+// Keep this if the KPI page is still present; otherwise you can delete it safely.
 export async function createKPI(formData: FormData) {
   const schema = z.object({
     fiscalYearId: z.string().cuid(),
